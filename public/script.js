@@ -9,6 +9,7 @@ let analyser;
 let microphone;
 let isConnecting = false;
 let mySocketId = null;
+let selectedRoom = null;
 
 // Обновляем конфигурацию ICE серверов
 const ICE_SERVERS = {
@@ -93,6 +94,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    updateRoomsList();
+    
+    // Закрытие модальных окон при клике вне их области
+    window.onclick = (event) => {
+        const createRoomModal = document.getElementById('createRoomModal');
+        const passwordModal = document.getElementById('passwordModal');
+        if (event.target === createRoomModal) {
+            hideCreateRoomModal();
+        }
+        if (event.target === passwordModal) {
+            hidePasswordModal();
+        }
+    };
 });
 
 // Настройка аудио анализатора
@@ -157,103 +172,180 @@ function visualize() {
     draw();
 }
 
-// Присоединение к комнате
-function joinRoom(roomName) {
-    if (currentRoom) {
-        leaveRoom();
+// Функции для модальных окон
+function showCreateRoomModal() {
+    document.getElementById('createRoomModal').style.display = 'block';
+}
+
+function hideCreateRoomModal() {
+    document.getElementById('createRoomModal').style.display = 'none';
+}
+
+function showPasswordModal() {
+    document.getElementById('passwordModal').style.display = 'block';
+}
+
+function hidePasswordModal() {
+    document.getElementById('passwordModal').style.display = 'none';
+}
+
+// Создание новой комнаты
+async function createRoom() {
+    const name = document.getElementById('roomName').value.trim();
+    const password = document.getElementById('roomPassword').value;
+    const maxUsers = parseInt(document.getElementById('maxUsers').value);
+
+    if (!name || !password) {
+        alert('Пожалуйста, заполните все поля');
+        return;
     }
 
-    currentRoom = roomName;
-    socket.emit('join-room', { room: roomName, username });
-
-    // Обновляем UI
-    document.querySelector('.container').style.display = 'none';
-    const roomElement = createRoomElement(roomName);
-    document.body.appendChild(roomElement);
-}
-
-// Создание элементов комнаты
-function createRoomElement(roomName) {
-    const room = document.createElement('div');
-    room.className = 'room active';
-    room.innerHTML = `
-        <div class="room-header">
-            <h2>${roomName}</h2>
-            <div class="controls">
-                <button class="control-btn mute-btn">
-                    <i class="fas fa-microphone${isMuted ? '-slash' : ''}"></i>
-                    
-                </button>
-                <button class="control-btn leave-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </div>
-        </div>
-        <div class="users-list"></div>
-    `;
-
-    // Обработчики кнопок
-    const muteBtn = room.querySelector('.mute-btn');
-    const leaveBtn = room.querySelector('.leave-btn');
-
-    muteBtn.addEventListener('click', toggleMute);
-    leaveBtn.addEventListener('click', leaveRoom);
-
-    return room;
-}
-
-// Переключение микрофона
-function toggleMute() {
-    if (localStream) {
-        isMuted = !isMuted;
-        localStream.getAudioTracks().forEach(track => {
-            track.enabled = !isMuted;
+    try {
+        const response = await fetch('/api/rooms', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, password, maxUsers })
         });
-        
-        const muteBtn = document.querySelector('.mute-btn');
-        const muteIcon = muteBtn.querySelector('i');
-        muteIcon.className = `fas fa-microphone${isMuted ? '-slash' : ''}`;
-        muteBtn.classList.toggle('active', !isMuted);
-        
-        // Сброс индикатора громкости при отключении
-        if (isMuted) {
-            const volumeMeter = document.querySelector('.volume-meter');
-            if (volumeMeter) {
-                volumeMeter.style.width = '0%';
-            }
+
+        const data = await response.json();
+        if (data.error) {
+            alert(data.error);
+            return;
         }
 
-        // Оповещаем сервер о изменении состояния микрофона
-        if (currentRoom) {
-            socket.emit('user-mute-change', {
-                room: currentRoom,
-                muted: isMuted
-            });
-        }
+        hideCreateRoomModal();
+        // Автоматически входим в созданную комнату
+        selectedRoom = name;
+        joinRoom(name, password);
+    } catch (error) {
+        console.error('Ошибка при создании комнаты:', error);
+        alert('Не удалось создать комнату');
     }
 }
 
-// Выход из комнаты
-function leaveRoom() {
-    if (currentRoom) {
-        socket.emit('leave-room', { room: currentRoom });
-        document.querySelector('.room').remove();
-        document.querySelector('.container').style.display = 'block';
-        
-        // Закрываем все peer соединения и удаляем аудио элементы
-        Object.keys(peers).forEach(userId => {
-            if (peers[userId]) {
-                peers[userId].destroy();
-                const audioElement = document.getElementById(`audio-${userId}`);
-                if (audioElement) {
-                    audioElement.remove();
+// Обновление списка комнат
+async function updateRoomsList() {
+    try {
+        const response = await fetch('/api/rooms');
+        const rooms = await response.json();
+
+        const roomsContainer = document.querySelector('.rooms');
+        roomsContainer.innerHTML = rooms.map(room => `
+            <button class="room-btn" 
+                    data-room="${room.name}" 
+                    data-protected="${room.isProtected}"
+                    onclick="selectRoom('${room.name}', ${room.isProtected})">
+                ${room.name}
+                <span class="room-info">
+                    ${room.userCount}/${room.maxUsers}
+                </span>
+            </button>
+        `).join('');
+    } catch (error) {
+        console.error('Ошибка при получении списка комнат:', error);
+    }
+}
+
+// Выбор комнаты
+function selectRoom(roomName, isProtected) {
+    const username = document.getElementById('username').value.trim();
+    if (!username) {
+        alert('Пожалуйста, введите ваше имя');
+        return;
+    }
+
+    selectedRoom = roomName;
+
+    if (isProtected) {
+        showPasswordModal();
+    } else {
+        joinRoom(roomName);
+    }
+}
+
+// Присоединение к защищенной комнате
+async function joinProtectedRoom() {
+    const password = document.getElementById('enterPassword').value;
+    
+    try {
+        const response = await fetch('/api/rooms/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                name: selectedRoom, 
+                password 
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        hidePasswordModal();
+        joinRoom(selectedRoom, password);
+    } catch (error) {
+        console.error('Ошибка при входе в комнату:', error);
+        alert('Не удалось войти в комнату');
+    }
+}
+
+// Обновляем функцию присоединения к комнате
+async function joinRoom(roomName, password = null) {
+    const username = document.getElementById('username').value.trim();
+    
+    if (!username) {
+        alert('Пожалуйста, введите ваше имя');
+        return;
+    }
+
+    try {
+        if (!localStream) {
+            console.log('Запрашиваем доступ к микрофону...');
+            localStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
                 }
-            }
+            });
+            console.log('Доступ к микрофону получен');
+            setupAudioAnalyser(localStream);
+        }
+
+        // Показываем индикатор загрузки
+        const roomsContainer = document.querySelector('.rooms');
+        roomsContainer.style.opacity = '0.5';
+        
+        socket.emit('join-room', { 
+            room: roomName, 
+            username,
+            password
         });
-        peers = {};
-        currentRoom = null;
+
+    } catch (error) {
+        console.error('Ошибка при входе в комнату:', error);
+        alert('Не удалось получить доступ к микрофону. Пожалуйста, проверьте настройки браузера.');
+        const roomsContainer = document.querySelector('.rooms');
+        roomsContainer.style.opacity = '1';
     }
 }
+
+// Обработчик создания новой комнаты
+socket.on('room-created', ({ name, isProtected }) => {
+    updateRoomsList();
+});
+
+// Обработчик удаления комнаты
+socket.on('room-deleted', ({ name }) => {
+    console.log(`Комната ${name} была удалена`);
+    updateRoomsList();
+});
 
 // Обновляем обработчик user-connected
 socket.on('user-connected', ({ userId, username }) => {
@@ -279,7 +371,33 @@ socket.on('user-disconnected', ({ userId, username }) => {
 });
 
 socket.on('room-users', (users) => {
+    const roomsContainer = document.querySelector('.rooms');
+    roomsContainer.style.opacity = '1';
+    
+    // Скрываем контейнер с выбором комнаты
+    const container = document.querySelector('.container');
+    if (container) {
+        container.style.display = 'none';
+    }
+    
+    // Показываем интерфейс комнаты
+    const roomInterface = document.querySelector('.room');
+    if (roomInterface) {
+        roomInterface.style.display = 'flex';
+        const roomNameElement = document.getElementById('room-name');
+        if (roomNameElement) {
+            roomNameElement.textContent = selectedRoom;
+        }
+    }
+    
+    // Устанавливаем текущую комнату
+    currentRoom = selectedRoom;
+    
+    // Обновляем список пользователей
     updateUsersList(users);
+    
+    // Обновляем список комнат для отображения актуального количества участников
+    updateRoomsList();
 });
 
 // Обновление списка пользователей
@@ -621,4 +739,77 @@ function createAudioElement(userId, stream) {
     };
     
     return audio;
+}
+
+// Добавляем обработчик ошибок от сервера
+socket.on('error', (message) => {
+    alert('Ошибка: ' + message);
+    const roomsContainer = document.querySelector('.rooms');
+    roomsContainer.style.opacity = '1';
+});
+
+// Функция для выхода из комнаты
+function leaveRoom() {
+    if (currentRoom) {
+        socket.emit('leave-room', { room: currentRoom });
+        
+        // Очищаем все peer-соединения
+        Object.keys(peers).forEach(userId => {
+            if (peers[userId]) {
+                peers[userId].destroy();
+                delete peers[userId];
+            }
+        });
+        
+        // Останавливаем все треки локального стрима
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+        
+        // Скрываем интерфейс комнаты
+        const roomInterface = document.querySelector('.room');
+        if (roomInterface) {
+            roomInterface.style.display = 'none';
+        }
+        
+        // Показываем контейнер с выбором комнаты
+        const container = document.querySelector('.container');
+        if (container) {
+            container.style.display = 'block';
+        }
+        
+        currentRoom = null;
+        selectedRoom = null;
+        
+        // Очищаем все аудио элементы
+        document.querySelectorAll('audio').forEach(audio => audio.remove());
+    }
+}
+
+// Функция для переключения микрофона
+function toggleMute() {
+    if (!localStream) return;
+    
+    isMuted = !isMuted;
+    localStream.getAudioTracks().forEach(track => {
+        track.enabled = !isMuted;
+    });
+    
+    const muteBtn = document.querySelector('.mute-btn');
+    if (muteBtn) {
+        const icon = muteBtn.querySelector('i');
+        if (icon) {
+            icon.className = isMuted ? 'fas fa-microphone-slash' : 'fas fa-microphone';
+        }
+        muteBtn.classList.toggle('active', isMuted);
+    }
+    
+    // Оповещаем сервер о изменении состояния микрофона
+    if (currentRoom) {
+        socket.emit('user-mute-change', {
+            room: currentRoom,
+            muted: isMuted
+        });
+    }
 } 
