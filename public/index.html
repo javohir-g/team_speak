@@ -3,71 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Голосовой чат</title>
+    
+    <!-- Google Site Verification -->
+    <meta name="google-site-verification" content="sNt7MORqhM4V49xdWDsqnDfO2vyoHqA4ILIpwn8-2nI" />
+    
+    <!-- Основные мета-теги -->
+    <title>TMSpeak | Голосовой чат онлайн | Бесплатное общение в реальном времени</title>
+    <meta name="description" content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон. Создавайте защищенные комнаты и управляйте участниками.">
+    <meta name="keywords" content="TMSpeak, голосовой чат, онлайн общение, голосовое общение, чат комнаты, WebRTC, voice chat, team speak">
+    
+    <!-- Open Graph мета-теги для соцсетей -->
+    <meta property="og:title" content="TMSpeak | Голосовой чат онлайн | Бесплатное общение в реальном времени">
+    <meta property="og:description" content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tmspeak.onrender.com/">
+    <meta property="og:site_name" content="TMSpeak">
+    
+    <!-- Twitter Card мета-теги -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="TMSpeak | Голосовой чат онлайн | Бесплатное общение в реальном времени">
+    <meta name="twitter:description" content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон.">
+    
+    <!-- Дополнительные мета-теги -->
+    <meta name="author" content="TMSpeak">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Russian">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Стили -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://tmspeak.onrender.com/">
 </head>
 <body>
-    <div class="container">
-        <h1>Выберите комнату</h1>
-        <input type="text" id="username" placeholder="Введите ваше имя">
-        <div class="rooms">
-            
-        </div>
-        <button class="create-room-btn" onclick="showCreateRoomModal()">
+    <!-- Основной контент -->
+    <main class="container">
+        <h1>Голосовой чат онлайн</h1>
+        <p class="subtitle">Бесплатное общение в реальном времени</p>
+        
+        <section class="user-input">
+            <input type="text" id="username" placeholder="Введите ваше имя" aria-label="Ваше имя">
+        </section>
+        
+        <section class="rooms" aria-label="Список доступных комнат">
+            <!-- Комнаты будут добавлены динамически -->
+        </section>
+        
+        <button class="create-room-btn" onclick="showCreateRoomModal()" aria-label="Создать новую комнату">
             <i class="fas fa-plus"></i> Создать комнату
         </button>
-    </div>
+    </main>
 
     <!-- Интерфейс комнаты -->
-    <div class="room" style="display: none;">
-        <div class="room-header">
+    <section class="room" style="display: none;" aria-label="Интерфейс комнаты">
+        <header class="room-header">
             <h2 id="room-name"></h2>
             <div class="controls">
-                <button class="control-btn mute-btn" onclick="toggleMute()">
+                <button class="control-btn mute-btn" onclick="toggleMute()" aria-label="Включить/выключить микрофон">
                     <i class="fas fa-microphone"></i>
                     <div class="volume-container">
                         <div class="volume-meter"></div>
                     </div>
                 </button>
-                <button class="control-btn" onclick="leaveRoom()">
+                <button class="control-btn" onclick="leaveRoom()" aria-label="Покинуть комнату">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
-        </div>
-        <div class="users-list"></div>
-    </div>
+        </header>
+        <div class="users-list" aria-label="Список участников"></div>
+    </section>
 
     <!-- Модальное окно создания комнаты -->
-    <div id="createRoomModal" class="modal">
+    <div id="createRoomModal" class="modal" role="dialog" aria-labelledby="createRoomTitle">
         <div class="modal-content">
-            <h2>Создание комнаты</h2>
-            <div class="modal-form">
-                <input type="text" id="roomName" placeholder="Название комнаты" maxlength="30">
-                <input type="password" id="roomPassword" placeholder="Пароль комнаты">
+            <h2 id="createRoomTitle">Создание комнаты</h2>
+            <form class="modal-form" onsubmit="createRoom(); return false;">
+                <input type="text" id="roomName" placeholder="Название комнаты" maxlength="30" required>
+                <input type="password" id="roomPassword" placeholder="Пароль комнаты" required>
                 <div class="max-users-container">
                     <label for="maxUsers">Максимум участников:</label>
-                    <input type="number" id="maxUsers" min="2" max="10" value="5">
+                    <input type="number" id="maxUsers" min="2" max="10" value="5" required>
                 </div>
                 <div class="modal-buttons">
-                    <button onclick="createRoom()">Создать</button>
-                    <button onclick="hideCreateRoomModal()" class="cancel">Отмена</button>
+                    <button type="submit">Создать</button>
+                    <button type="button" onclick="hideCreateRoomModal()" class="cancel">Отмена</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
     <!-- Модальное окно для ввода пароля -->
-    <div id="passwordModal" class="modal">
+    <div id="passwordModal" class="modal" role="dialog" aria-labelledby="passwordModalTitle">
         <div class="modal-content">
-            <h2>Вход в комнату</h2>
-            <div class="modal-form">
-                <input type="password" id="enterPassword" placeholder="Введите пароль">
+            <h2 id="passwordModalTitle">Вход в комнату</h2>
+            <form class="modal-form" onsubmit="joinProtectedRoom(); return false;">
+                <input type="password" id="enterPassword" placeholder="Введите пароль" required>
                 <div class="modal-buttons">
-                    <button onclick="joinProtectedRoom()">Войти</button>
-                    <button onclick="hidePasswordModal()" class="cancel">Отмена</button>
+                    <button type="submit">Войти</button>
+                    <button type="button" onclick="hidePasswordModal()" class="cancel">Отмена</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
     
