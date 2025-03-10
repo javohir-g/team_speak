@@ -24,7 +24,7 @@ const rooms = {
     'Chat 2': { users: new Map(), totalVisits: 0, maxUsers: 10 }
 };
 
-// Защищенные комнаты
+// Защищенные комнаты (не удаляются автоматически)
 const protectedRooms = new Map();
 
 // Общая статистика
@@ -205,8 +205,8 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Проверяем пароль только для защищенных комнат
-        if (protectedRooms.has(room)) {
+        // Проверяем пароль только для защищенных комнат (не Chat 1 и Chat 2)
+        if (protectedRooms.has(room) && room !== 'Chat 1' && room !== 'Chat 2') {
             const protectedRoom = protectedRooms.get(room);
             if (protectedRoom.password !== password) {
                 socket.emit('error', 'Неверный пароль');
@@ -325,8 +325,8 @@ function leaveRoom(socket, room) {
         console.log(`Пользователь ${userData.username} (${socket.id}) покинул комнату ${room}`);
         console.log('Оставшиеся пользователи:', Array.from(rooms[room].users.values()));
 
-        // Если комната пуста, удаляем её немедленно
-        if (rooms[room].users.size === 0) {
+        // Если комната пуста и не является защищенной, удаляем её
+        if (rooms[room].users.size === 0 && !protectedRooms.has(room)) {
             console.log(`Удаление пустой комнаты: ${room}`);
             delete rooms[room];
             protectedRooms.delete(room);
@@ -339,7 +339,7 @@ function leaveRoom(socket, room) {
 // Очистка пустых комнат (каждые 5 минут) - резервный механизм
 setInterval(() => {
     for (const [roomName, room] of Object.entries(rooms)) {
-        if (room.users.size === 0) {
+        if (room.users.size === 0 && !protectedRooms.has(roomName)) {
             console.log(`Резервная очистка пустой комнаты: ${roomName}`);
             delete rooms[roomName];
             protectedRooms.delete(roomName);
