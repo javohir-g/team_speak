@@ -16,32 +16,54 @@ app.use(express.static('public'));
 
 // Хранение информации о комнатах и пользователях
 const rooms = {
-    'Комната 1': { users: new Map() },
-    'Комната 2': { users: new Map() },
-    'Комната 3': { users: new Map() },
-    'Комната 4': { users: new Map() },
-    'Комната 5': { users: new Map() }
+    'Комната 1': { users: new Map(), totalVisits: 0 },
+    'Комната 2': { users: new Map(), totalVisits: 0 },
+    'Комната 3': { users: new Map(), totalVisits: 0 },
+    'Комната 4': { users: new Map(), totalVisits: 0 },
+    'Комната 5': { users: new Map(), totalVisits: 0 }
 };
 
-// Админ-маршрут для статистики (скрытый)
+// Общая статистика
+const stats = {
+    totalConnections: 0,
+    peakConcurrentUsers: 0,
+    currentConcurrentUsers: 0
+};
+
+// Админ-маршрут для статистики
 app.get('/admin-stats', (req, res) => {
-    const stats = {};
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// API для получения статистики
+app.get('/api/stats', (req, res) => {
+    const roomStats = {};
     for (const [roomName, room] of Object.entries(rooms)) {
-        stats[roomName] = {
+        roomStats[roomName] = {
             userCount: room.users.size,
+            totalVisits: room.totalVisits,
             users: Array.from(room.users.values()).map(u => ({
                 id: u.id,
                 username: u.username,
-                muted: u.muted
+                muted: u.muted,
+                joinTime: u.joinTime
             }))
         };
     }
-    res.json(stats);
+    
+    res.json({
+        rooms: roomStats,
+        globalStats: stats
+    });
 });
 
 // Обработка Socket.IO соединений
 io.on('connection', (socket) => {
     console.log('Новое подключение:', socket.id);
+    stats.totalConnections++;
+    stats.currentConcurrentUsers++;
+    stats.peakConcurrentUsers = Math.max(stats.peakConcurrentUsers, stats.currentConcurrentUsers);
+
     let currentRoom = null;
     let userData = null;
 
@@ -63,10 +85,16 @@ io.on('connection', (socket) => {
 
         // Присоединяемся к новой комнате
         currentRoom = room;
-        userData = { id: socket.id, username, muted: false };
+        userData = { 
+            id: socket.id, 
+            username, 
+            muted: false,
+            joinTime: new Date().toISOString()
+        };
         
         socket.join(room);
         rooms[room].users.set(socket.id, userData);
+        rooms[room].totalVisits++;
 
         // Оповещаем всех в комнате о новом пользователе
         socket.to(room).emit('user-connected', { userId: socket.id, username });
@@ -128,6 +156,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
+        stats.currentConcurrentUsers--;
         console.log(`Пользователь отключился: ${socket.id}`);
         if (currentRoom) {
             leaveRoom(socket, currentRoom);

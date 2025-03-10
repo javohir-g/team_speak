@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель | Голосовой чат</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-card {
+            background: linear-gradient(145deg, var(--accent-color), var(--hover-color));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stats-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .stats-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .room-card {
+            background: linear-gradient(145deg, var(--accent-color), var(--hover-color));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .room-header h2 {
+            font-size: 1.5rem;
+            background: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .room-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .room-stat-item {
+            background: var(--accent-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .room-stat-item .label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .room-stat-item .value {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .user-list {
+            margin-top: 1rem;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--accent-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-status .time {
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(145deg, var(--active-color), var(--active-color-light));
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(33, 150, 243, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .refresh-btn.loading i {
+            animation: rotate 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>Админ-панель</h1>
+        
+        <div class="stats-grid">
+            <div class="stats-card">
+                <h3>Всего подключений</h3>
+                <div class="value" id="totalConnections">-</div>
+            </div>
+            <div class="stats-card">
+                <h3>Текущих пользователей</h3>
+                <div class="value" id="currentUsers">-</div>
+            </div>
+            <div class="stats-card">
+                <h3>Пиковое количество</h3>
+                <div class="value" id="peakUsers">-</div>
+            </div>
+        </div>
+
+        <div id="rooms-container"></div>
+    </div>
+
+    <button class="refresh-btn" onclick="fetchStats()">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <script>
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString();
+        }
+
+        function timeSince(isoString) {
+            const seconds = Math.floor((new Date() - new Date(isoString)) / 1000);
+            
+            let interval = seconds / 3600;
+            if (interval > 1) {
+                return Math.floor(interval) + ' ч';
+            }
+            interval = seconds / 60;
+            if (interval > 1) {
+                return Math.floor(interval) + ' мин';
+            }
+            return Math.floor(seconds) + ' сек';
+        }
+
+        function updateRoom(roomName, roomData) {
+            return `
+                <div class="room-card">
+                    <div class="room-header">
+                        <h2>${roomName}</h2>
+                    </div>
+                    <div class="room-stats">
+                        <div class="room-stat-item">
+                            <div class="label">Текущих пользователей</div>
+                            <div class="value">${roomData.userCount}</div>
+                        </div>
+                        <div class="room-stat-item">
+                            <div class="label">Всего посещений</div>
+                            <div class="value">${roomData.totalVisits}</div>
+                        </div>
+                    </div>
+                    <div class="user-list">
+                        ${roomData.users.map(user => `
+                            <div class="user-item">
+                                <div class="user-info">
+                                    <i class="fas fa-microphone${user.muted ? '-slash' : ''}" style="color: ${user.muted ? 'var(--error-color)' : 'var(--success-color)'}"></i>
+                                    <span>${user.username}</span>
+                                </div>
+                                <div class="user-status">
+                                    <span class="time" title="Время в комнате">${timeSince(user.joinTime)}</span>
+                                    <span class="id" title="ID пользователя" style="opacity: 0.5">${user.id}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function fetchStats() {
+            const refreshBtn = document.querySelector('.refresh-btn');
+            refreshBtn.classList.add('loading');
+
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                // Обновляем общую статистику
+                document.getElementById('totalConnections').textContent = data.globalStats.totalConnections;
+                document.getElementById('currentUsers').textContent = data.globalStats.currentConcurrentUsers;
+                document.getElementById('peakUsers').textContent = data.globalStats.peakConcurrentUsers;
+
+                // Обновляем информацию о комнатах
+                const roomsHtml = Object.entries(data.rooms)
+                    .map(([roomName, roomData]) => updateRoom(roomName, roomData))
+                    .join('');
+                document.getElementById('rooms-container').innerHTML = roomsHtml;
+            } catch (error) {
+                console.error('Ошибка при получении статистики:', error);
+            } finally {
+                refreshBtn.classList.remove('loading');
+            }
+        }
+
+        // Получаем статистику при загрузке страницы
+        fetchStats();
+
+        // Обновляем статистику каждые 5 секунд
+        setInterval(fetchStats, 5000);
+    </script>
+</body>
+</html> 
