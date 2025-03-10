@@ -1,6 +1,16 @@
 {
-  "totalConnections": 111,
+  "totalConnections": 113,
   "peakConcurrentUsers": 7,
-  "currentConcurrentUsers": 1,
-  "rooms": {}
+  "currentConcurrentUsers": 2,
+  "rooms": {
+    "Chat 1": {
+      "totalVisits": 0
+    },
+    "Chat 2": {
+      "totalVisits": 0
+    },
+    "первый": {
+      "totalVisits": 2
+    }
+  }
 }

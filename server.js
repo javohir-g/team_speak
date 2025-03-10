@@ -19,7 +19,10 @@ const STATS_FILE = path.join(__dirname, 'stats.json');
 app.use(express.static('public'));
 
 // Хранение информации о комнатах и пользователях
-const rooms = {};
+const rooms = {
+    'Chat 1': { users: new Map(), totalVisits: 0, maxUsers: 20 },
+    'Chat 2': { users: new Map(), totalVisits: 0, maxUsers: 10 }
+};
 
 // Защищенные комнаты
 const protectedRooms = new Map();
@@ -202,7 +205,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Проверяем пароль для защищенной комнаты
+        // Проверяем пароль только для защищенных комнат
         if (protectedRooms.has(room)) {
             const protectedRoom = protectedRooms.get(room);
             if (protectedRoom.password !== password) {
