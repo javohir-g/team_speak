@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Голосовой чат для геймеров</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Выберите комнату</h1>
+        <input type="text" id="username" placeholder="Введите ваше имя">
+        <div class="rooms">
+            <button class="room-btn" data-room="Комната 1">Комната 1</button>
+            <button class="room-btn" data-room="Комната 2">Комната 2</button>
+            <button class="room-btn" data-room="Комната 3">Комната 3</button>
+            <button class="room-btn" data-room="Комната 4">Комната 4</button>
+            <button class="room-btn" data-room="Комната 5">Комната 5</button>
+            <button class="room-btn" data-room="Комната 6">Комната 6</button>
+        </div>
+    </div>
+    
+    <!-- Подключаем библиотеки -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.1/simplepeer.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 
