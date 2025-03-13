@@ -63,13 +63,28 @@
         <header class="room-header">
             <h2 id="room-name"></h2>
             <div class="controls">
-                <button class="control-btn mute-btn" onclick="toggleMute()" aria-label="Включить/выключить микрофон">
+                <button class="mute-btn" onclick="toggleMute()" title="Включить/выключить микрофон">
                     <i class="fas fa-microphone"></i>
-                    <div class="volume-container">
-                        <div class="volume-meter"></div>
-                    </div>
                 </button>
-                <button class="control-btn" onclick="leaveRoom()" aria-label="Покинуть комнату">
+                <button class="hear-self-btn" onclick="toggleHearSelf()" title="Слышать себя">
+                    <i class="fas fa-volume-mute"></i>
+                </button>
+                <button class="music-btn" data-track="track1" onclick="playMusic('track1')" title="Музыка 1">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="music-btn" data-track="track2" onclick="playMusic('track2')" title="Музыка 2">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="music-btn" data-track="track3" onclick="playMusic('track3')" title="Музыка 3">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="music-btn" data-track="track4" onclick="playMusic('track4')" title="Музыка 4">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="music-btn" data-track="track5" onclick="playMusic('track5')" title="Музыка 5">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="leave-btn" onclick="leaveRoom()" title="Покинуть комнату">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>

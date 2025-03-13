@@ -10,6 +10,21 @@ let microphone;
 let isConnecting = false;
 let mySocketId = null;
 let selectedRoom = null;
+let canHearSelf = false;
+let currentMusic = null;
+
+// Добавляем звуки
+const connectSound = new Audio('/sounds/connect.mp3');
+const disconnectSound = new Audio('/sounds/disconnect.mp3');
+
+// Добавляем музыку
+const musicTracks = {
+    'track1': new Audio('/sounds/music1.mp3'),
+    'track2': new Audio('/sounds/music2.mp3'),
+    'track3': new Audio('/sounds/music3.mp3'),
+    'track4': new Audio('/sounds/music4.mp3'),
+    'track5': new Audio('/sounds/music5.mp3')
+};
 
 // Обновляем конфигурацию ICE серверов
 const ICE_SERVERS = {
@@ -352,6 +367,7 @@ socket.on('user-connected', ({ userId, username }) => {
     console.log(`Пользователь ${username} присоединился (ID: ${userId})`);
     if (userId && userId !== mySocketId) {
         connectToNewUser(userId, username);
+        playSound(connectSound);
     }
 });
 
@@ -367,6 +383,7 @@ socket.on('user-disconnected', ({ userId, username }) => {
             audioElement.remove();
         }
     }
+    playSound(disconnectSound);
     updateUsersList();
 });
 
@@ -767,6 +784,9 @@ function leaveRoom() {
             localStream = null;
         }
         
+        // Останавливаем музыку
+        stopAllMusic();
+        
         // Скрываем интерфейс комнаты
         const roomInterface = document.querySelector('.room');
         if (roomInterface) {
@@ -783,7 +803,11 @@ function leaveRoom() {
         selectedRoom = null;
         
         // Очищаем все аудио элементы
-        document.querySelectorAll('audio').forEach(audio => audio.remove());
+        document.querySelectorAll('audio').forEach(audio => {
+            if (audio.id !== 'audio-self') {
+                audio.remove();
+            }
+        });
     }
 }
 
@@ -812,4 +836,176 @@ function toggleMute() {
             muted: isMuted
         });
     }
-} 
+}
+
+// Добавляем функцию для переключения "слышать себя"
+function toggleHearSelf() {
+    canHearSelf = !canHearSelf;
+    if (localStream) {
+        const audioElement = document.getElementById('audio-self');
+        if (canHearSelf) {
+            if (!audioElement) {
+                const audio = document.createElement('audio');
+                audio.id = 'audio-self';
+                audio.autoplay = true;
+                audio.srcObject = localStream;
+                audio.volume = 0.5; // Устанавливаем громкость на 50%
+                document.body.appendChild(audio);
+            }
+        } else {
+            const audioElement = document.getElementById('audio-self');
+            if (audioElement) {
+                audioElement.remove();
+            }
+        }
+    }
+    
+    // Обновляем иконку кнопки
+    const hearSelfBtn = document.querySelector('.hear-self-btn');
+    if (hearSelfBtn) {
+        const icon = hearSelfBtn.querySelector('i');
+        if (icon) {
+            icon.className = canHearSelf ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+        }
+        hearSelfBtn.classList.toggle('active', canHearSelf);
+    }
+}
+
+// Функция для воспроизведения звука
+function playSound(sound) {
+    sound.currentTime = 0;
+    sound.play().catch(error => console.error('Ошибка воспроизведения звука:', error));
+}
+
+// Функция для воспроизведения музыки
+function playMusic(trackId) {
+    // Если выбрана та же самая музыка, останавливаем её
+    if (currentMusic === musicTracks[trackId]) {
+        currentMusic.pause();
+        currentMusic.currentTime = 0;
+        currentMusic = null;
+        updateMusicButton(trackId, false);
+        // Оповещаем других пользователей об остановке музыки
+        if (currentRoom) {
+            socket.emit('music-control', {
+                room: currentRoom,
+                action: 'stop',
+                trackId: trackId
+            });
+        }
+        return;
+    }
+
+    // Останавливаем текущую музыку, если она играет
+    if (currentMusic) {
+        currentMusic.pause();
+        currentMusic.currentTime = 0;
+        // Обновляем кнопку предыдущего трека
+        Object.keys(musicTracks).forEach(id => {
+            if (musicTracks[id] === currentMusic) {
+                updateMusicButton(id, false);
+            }
+        });
+    }
+
+    // Воспроизводим новую музыку
+    currentMusic = musicTracks[trackId];
+    currentMusic.loop = false; // Отключаем повторение
+    
+    // Добавляем обработчик окончания трека
+    currentMusic.onended = () => {
+        currentMusic = null;
+        updateMusicButton(trackId, false);
+        // Оповещаем других пользователей об окончании музыки
+        if (currentRoom) {
+            socket.emit('music-control', {
+                room: currentRoom,
+                action: 'stop',
+                trackId: trackId
+            });
+        }
+    };
+    
+    currentMusic.play().catch(error => console.error('Ошибка воспроизведения музыки:', error));
+    updateMusicButton(trackId, true);
+
+    // Оповещаем других пользователей о воспроизведении музыки
+    if (currentRoom) {
+        socket.emit('music-control', {
+            room: currentRoom,
+            action: 'play',
+            trackId: trackId
+        });
+    }
+}
+
+// Функция для обновления состояния кнопки музыки
+function updateMusicButton(trackId, isPlaying) {
+    const button = document.querySelector(`.music-btn[data-track="${trackId}"]`);
+    if (button) {
+        const icon = button.querySelector('i');
+        if (icon) {
+            icon.className = isPlaying ? 'fas fa-stop' : 'fas fa-play';
+        }
+        button.classList.toggle('active', isPlaying);
+    }
+}
+
+// Функция для остановки всей музыки
+function stopAllMusic() {
+    if (currentMusic) {
+        currentMusic.pause();
+        currentMusic.currentTime = 0;
+        currentMusic = null;
+        // Обновляем все кнопки
+        Object.keys(musicTracks).forEach(trackId => {
+            updateMusicButton(trackId, false);
+        });
+        // Оповещаем других пользователей об остановке музыки
+        if (currentRoom) {
+            socket.emit('music-control', {
+                room: currentRoom,
+                action: 'stop',
+                trackId: Object.keys(musicTracks).find(id => musicTracks[id] === currentMusic)
+            });
+        }
+    }
+}
+
+// Добавляем обработчик управления музыкой от других пользователей
+socket.on('music-control', ({ action, trackId, userId }) => {
+    // Игнорируем собственные сигналы
+    if (userId === socket.id) return;
+
+    if (action === 'play') {
+        // Останавливаем текущую музыку, если она играет
+        if (currentMusic) {
+            currentMusic.pause();
+            currentMusic.currentTime = 0;
+            Object.keys(musicTracks).forEach(id => {
+                if (musicTracks[id] === currentMusic) {
+                    updateMusicButton(id, false);
+                }
+            });
+        }
+
+        // Воспроизводим новую музыку
+        currentMusic = musicTracks[trackId];
+        currentMusic.loop = false;
+        
+        currentMusic.onended = () => {
+            currentMusic = null;
+            updateMusicButton(trackId, false);
+        };
+        
+        currentMusic.play().catch(error => console.error('Ошибка воспроизведения музыки:', error));
+        updateMusicButton(trackId, true);
+    } else if (action === 'stop') {
+        if (currentMusic === musicTracks[trackId]) {
+            currentMusic.pause();
+            currentMusic.currentTime = 0;
+            currentMusic = null;
+            updateMusicButton(trackId, false);
+        }
+    }
+}); 

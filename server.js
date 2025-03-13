@@ -309,6 +309,23 @@ io.on('connection', (socket) => {
     socket.on('error', (error) => {
         console.error(`Ошибка сокета для пользователя ${socket.id}:`, error);
     });
+
+    // Обработка управления музыкой
+    socket.on('music-control', (data) => {
+        const { room, action, trackId } = data;
+        if (rooms[room]) {
+            // Отправляем сигнал всем пользователям в комнате, кроме отправителя
+            rooms[room].users.forEach((user, userId) => {
+                if (userId !== socket.id) {
+                    io.to(userId).emit('music-control', {
+                        action,
+                        trackId,
+                        userId: socket.id
+                    });
+                }
+            });
+        }
+    });
 });
 
 // Функция для покидания комнаты

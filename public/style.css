@@ -679,3 +679,146 @@ input::placeholder {
         transform: scale(0.95);
     }
 }
+
+/* Стили для кнопок музыки */
+.music-btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: #2196F3;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.music-btn:hover {
+    transform: scale(1.1);
+    background: #1976D2;
+}
+
+.music-btn.active {
+    background: #f44336;
+    box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+    animation: pulse 2s infinite;
+}
+
+.music-btn i {
+    font-size: 1.2em;
+    transition: transform 0.3s ease;
+}
+
+.music-btn:hover i {
+    transform: scale(1.1);
+}
+
+.music-btn.active i {
+    transform: scale(1.1);
+}
+
+/* Стили для кнопок управления */
+.mute-btn,
+.hear-self-btn,
+.leave-btn {
+    background: #4CAF50;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.mute-btn:hover,
+.hear-self-btn:hover,
+.leave-btn:hover {
+    transform: scale(1.1);
+}
+
+.mute-btn.active,
+.hear-self-btn.active {
+    background: #f44336;
+}
+
+.leave-btn {
+    background: #f44336;
+}
+
+.leave-btn:hover {
+    background: #d32f2f;
+}
+
+.mute-btn i,
+.hear-self-btn i,
+.leave-btn i {
+    color: white;
+    font-size: 20px;
+}
+
+/* Общие стили для подсказок всех кнопок */
+.mute-btn,
+.hear-self-btn,
+.leave-btn,
+.music-btn {
+    position: relative;
+}
+
+.mute-btn::after,
+.hear-self-btn::after,
+.leave-btn::after,
+.music-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mute-btn:hover::after,
+.hear-self-btn:hover::after,
+.leave-btn:hover::after,
+.music-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: -35px;
+}
+
+/* Удаляем дублирующие стили для .music-btn::after */
+.music-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.music-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: -35px;
+}

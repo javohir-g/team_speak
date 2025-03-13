@@ -1,10 +1,10 @@
 {
-  "totalConnections": 130,
+  "totalConnections": 169,
   "peakConcurrentUsers": 7,
   "currentConcurrentUsers": 1,
   "rooms": {
-    "Chat 2": {
-      "totalVisits": 0
+    "1": {
+      "totalVisits": 2
     }
   }
 }
