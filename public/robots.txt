@@ -4,4 +4,4 @@ Allow: /admin-stats
 Disallow: /socket.io/
 Disallow: /api/
 
-Sitemap: https://tmspeak.onrender.com/sitemap.xml 
+Sitemap: https://tmspeak.online/sitemap.xml 
