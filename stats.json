@@ -1,10 +1,6 @@
 {
-  "totalConnections": 169,
+  "totalConnections": 171,
   "peakConcurrentUsers": 7,
   "currentConcurrentUsers": 1,
-  "rooms": {
-    "1": {
-      "totalVisits": 2
-    }
-  }
+  "rooms": {}
 }
