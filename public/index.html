@@ -1,40 +1,44 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
-    <script async custom-element="amp-auto-ads"
-            src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    <script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
     </script>
-    
+
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9321593521749032"
-     crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Google Site Verification -->
     <meta name="google-site-verification" content="sNt7MORqhM4V49xdWDsqnDfO2vyoHqA4ILIpwn8-2nI" />
-    
+
     <!-- Основные мета-теги -->
     <title>TMSpeak | Голосовой чат онлайн | Бесплатное общение в реальном времени</title>
-    <meta name="description" content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон. Создавайте защищенные комнаты и управляйте участниками.">
-    <meta name="keywords" content="TMSpeak, голосовой чат, онлайн общение, голосовое общение, чат комнаты, WebRTC, voice chat, team speak">
-    
+    <meta name="description"
+        content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон. Создавайте защищенные комнаты и управляйте участниками.">
+    <meta name="keywords"
+        content="TMSpeak, голосовой чат, онлайн общение, голосовое общение, чат комнаты, WebRTC, voice chat, team speak">
+
     <!-- Open Graph мета-теги для соцсетей -->
     <meta property="og:title" content="TMSpeak | Голосовой чат онлайн | Бесплатное общение в реальном времени">
-    <meta property="og:description" content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон.">
+    <meta property="og:description"
+        content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://tmspeak.online/">
     <meta property="og:site_name" content="TMSpeak">
-    
+
     <!-- Twitter Card мета-теги -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="TMSpeak | Голосовой чат онлайн | Бесплатное общение в реальном времени">
-    <meta name="twitter:description" content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон.">
-    
+    <meta name="twitter:description"
+        content="TMSpeak - бесплатный голосовой чат с поддержкой комнат. Общайтесь в реальном времени с друзьями через микрофон.">
+
     <!-- Дополнительные мета-теги -->
     <meta name="author" content="TMSpeak">
     <meta name="robots" content="index, follow">
     <meta name="language" content="Russian">
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -42,30 +46,29 @@
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="manifest" href="site.webmanifest">
     <meta name="theme-color" content="#2196F3">
-    
+
     <!-- Стили -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    
+
     <!-- Canonical URL -->
     <link rel="canonical" href="https://tmspeak.online/
 <body>
-    <amp-auto-ads type="adsense"
-            data-ad-client="ca-pub-9321593521749032">
+    <amp-auto-ads type=" adsense" data-ad-client="ca-pub-9321593521749032">
     </amp-auto-ads>
     <!-- Основной контент -->
     <main class="container">
         <h1>Голосовой чат онлайн</h1>
 
-        
+
         <section class="user-input">
             <input type="text" id="username" placeholder="Введите ваше имя" aria-label="Ваше имя">
         </section>
-        
+
         <section class="rooms" aria-label="Список доступных комнат">
             <!-- Комнаты будут добавлены динамически -->
         </section>
-        
+
         <button class="create-room-btn" onclick="showCreateRoomModal()" aria-label="Создать новую комнату">
             <i class="fas fa-plus"></i> Создать комнату
         </button>
@@ -82,24 +85,14 @@
                 <button class="hear-self-btn" onclick="toggleHearSelf()" title="Слышать себя">
                     <i class="fas fa-volume-mute"></i>
                 </button>
-                <button class="music-btn" data-track="track1" onclick="playMusic('track1')" title="Музыка 1">
-                    <i class="fas fa-play"></i>
-                </button>
-                <button class="music-btn" data-track="track2" onclick="playMusic('track2')" title="Музыка 2">
-                    <i class="fas fa-play"></i>
-                </button>
-                <button class="music-btn" data-track="track3" onclick="playMusic('track3')" title="Музыка 3">
-                    <i class="fas fa-play"></i>
-                </button>
-                <button class="music-btn" data-track="track4" onclick="playMusic('track4')" title="Музыка 4">
-                    <i class="fas fa-play"></i>
-                </button>
-                <button class="music-btn" data-track="track5" onclick="playMusic('track5')" title="Музыка 5">
-                    <i class="fas fa-play"></i>
-                </button>
                 <button class="leave-btn" onclick="leaveRoom()" title="Покинуть комнату">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
+                <div class="mic-select-container">
+                    <select id="micSelect" title="Выберите микрофон">
+                        <option value="" disabled selected>Микрофон...</option>
+                    </select>
+                </div>
             </div>
         </header>
         <div class="users-list" aria-label="Список участников"></div>
@@ -137,22 +130,20 @@
             </form>
         </div>
     </div>
-    
+
     <!-- Подключаем библиотеки -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.1/simplepeer.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
-    
+
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9321593521749032"
-         crossorigin="anonymous"></script>
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-format="autorelaxed"
-         data-ad-client="ca-pub-9321593521749032"
-         data-ad-slot="7770904147"></ins>
+        crossorigin="anonymous"></script>
+    <ins class="adsbygoogle" style="display:block" data-ad-format="autorelaxed" data-ad-client="ca-pub-9321593521749032"
+        data-ad-slot="7770904147"></ins>
     <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
+        (adsbygoogle = window.adsbygoogle || []).push({});
     </script>
-    
-</body>
-</html> 
+
+    </body>
+
+</html>

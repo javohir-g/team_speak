@@ -11,10 +11,20 @@ let isConnecting = false;
 let mySocketId = null;
 let selectedRoom = null;
 let canHearSelf = false;
-let currentDeviceId = null;
+let currentMusic = null;
+
 // Добавляем звуки
 const connectSound = new Audio('/sounds/connect.mp3');
 const disconnectSound = new Audio('/sounds/disconnect.mp3');
+
+// Добавляем музыку
+const musicTracks = {
+    'track1': new Audio('/sounds/music1.mp3'),
+    'track2': new Audio('/sounds/music2.mp3'),
+    'track3': new Audio('/sounds/music3.mp3'),
+    'track4': new Audio('/sounds/music4.mp3'),
+    'track5': new Audio('/sounds/music5.mp3')
+};
 
 // Обновляем конфигурацию ICE серверов
 const ICE_SERVERS = {
@@ -72,25 +82,25 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 console.log('Запрашиваем доступ к микрофону...');
                 // Запрашиваем доступ к микрофону при входе в комнату
-                localStream = await navigator.mediaDevices.getUserMedia({
+                localStream = await navigator.mediaDevices.getUserMedia({ 
                     audio: {
                         echoCancellation: false,
                         noiseSuppression: false,
                         autoGainControl: false
                     }
                 });
-
+                
                 console.log('Доступ к микрофону получен');
-
+                
                 // Включаем звук по умолчанию
                 localStream.getAudioTracks().forEach(track => {
                     console.log('Состояние аудио трека:', track.enabled, track.readyState);
                     track.enabled = !isMuted;
                 });
-
+                
                 // Инициализация аудио анализатора
                 setupAudioAnalyser(localStream);
-
+                
                 const roomName = button.dataset.room;
                 joinRoom(roomName);
             } catch (error) {
@@ -101,21 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updateRoomsList();
-
-    // Инициализация выбора микрофона
-    const micSelect = document.getElementById('micSelect');
-    if (micSelect) {
-        micSelect.addEventListener('change', async (e) => {
-            if (e.target.value) {
-                await switchMicrophone(e.target.value);
-            }
-        });
-    }
-    // Заполняем список устройств
-    getConnectedDevices();
-    // Слушаем изменения устройств
-    navigator.mediaDevices.addEventListener('devicechange', getConnectedDevices);
-
+    
     // Закрытие модальных окон при клике вне их области
     window.onclick = (event) => {
         const createRoomModal = document.getElementById('createRoomModal');
@@ -137,29 +133,29 @@ function setupAudioAnalyser(stream) {
     if (audioContext.state === 'suspended') {
         audioContext.resume();
     }
-
+    
     analyser = audioContext.createAnalyser();
     microphone = audioContext.createMediaStreamSource(stream);
-
+    
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = 0.8;
     microphone.connect(analyser);
-
+    
     visualize();
 }
 
 // Визуализация уровня громкости
 function visualize() {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
+    
     function draw() {
         requestAnimationFrame(draw);
-
+        
         if (!isMuted && !document.hidden) {
             analyser.getByteFrequencyData(dataArray);
             const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
             const volume = Math.min(100, Math.round((average / 256) * 100));
-
+            
             // Обновляем индикатор в кнопке микрофона
             const volumeMeters = document.querySelectorAll('.volume-meter');
             volumeMeters.forEach(meter => {
@@ -172,7 +168,7 @@ function visualize() {
                     meter.style.backgroundColor = '#F44336';
                 }
             });
-
+            
             // Обновляем индикатор в списке пользователей
             const userVolumeMeter = document.querySelector(`.user-volume-meter[data-user-id="${socket.id}"]`);
             if (userVolumeMeter) {
@@ -187,7 +183,7 @@ function visualize() {
             }
         }
     }
-
+    
     draw();
 }
 
@@ -287,16 +283,16 @@ function selectRoom(roomName, isProtected) {
 // Присоединение к защищенной комнате
 async function joinProtectedRoom() {
     const password = document.getElementById('enterPassword').value;
-
+    
     try {
         const response = await fetch('/api/rooms/verify', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                name: selectedRoom,
-                password
+            body: JSON.stringify({ 
+                name: selectedRoom, 
+                password 
             })
         });
 
@@ -317,7 +313,7 @@ async function joinProtectedRoom() {
 // Обновляем функцию присоединения к комнате
 async function joinRoom(roomName, password = null) {
     const username = document.getElementById('username').value.trim();
-
+    
     if (!username) {
         alert('Пожалуйста, введите ваше имя');
         return;
@@ -326,7 +322,7 @@ async function joinRoom(roomName, password = null) {
     try {
         if (!localStream) {
             console.log('Запрашиваем доступ к микрофону...');
-            localStream = await navigator.mediaDevices.getUserMedia({
+            localStream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     echoCancellation: false,
                     noiseSuppression: false,
@@ -340,9 +336,9 @@ async function joinRoom(roomName, password = null) {
         // Показываем индикатор загрузки
         const roomsContainer = document.querySelector('.rooms');
         roomsContainer.style.opacity = '0.5';
-
-        socket.emit('join-room', {
-            room: roomName,
+        
+        socket.emit('join-room', { 
+            room: roomName, 
             username,
             password
         });
@@ -381,7 +377,7 @@ socket.on('user-disconnected', ({ userId, username }) => {
     if (peers[userId]) {
         peers[userId].destroy();
         delete peers[userId];
-
+        
         const audioElement = document.getElementById(`audio-${userId}`);
         if (audioElement) {
             audioElement.remove();
@@ -394,13 +390,13 @@ socket.on('user-disconnected', ({ userId, username }) => {
 socket.on('room-users', (users) => {
     const roomsContainer = document.querySelector('.rooms');
     roomsContainer.style.opacity = '1';
-
+    
     // Скрываем контейнер с выбором комнаты
     const container = document.querySelector('.container');
     if (container) {
         container.style.display = 'none';
     }
-
+    
     // Показываем интерфейс комнаты
     const roomInterface = document.querySelector('.room');
     if (roomInterface) {
@@ -410,13 +406,13 @@ socket.on('room-users', (users) => {
             roomNameElement.textContent = selectedRoom;
         }
     }
-
+    
     // Устанавливаем текущую комнату
     currentRoom = selectedRoom;
-
+    
     // Обновляем список пользователей
     updateUsersList(users);
-
+    
     // Обновляем список комнат для отображения актуального количества участников
     updateRoomsList();
 });
@@ -475,19 +471,19 @@ function handleAudioStream(stream, userId) {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioContext.createAnalyser();
     const source = audioContext.createMediaStreamSource(stream);
-
+    
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = 0.8;
     source.connect(analyser);
-
+    
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
+    
     function updateVolume() {
         if (!document.hidden) {
             analyser.getByteFrequencyData(dataArray);
             const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
             const volume = Math.min(100, Math.round((average / 256) * 100));
-
+            
             const volumeMeter = document.querySelector(`.user-volume-meter[data-user-id="${userId}"]`);
             if (volumeMeter) {
                 volumeMeter.style.width = `${volume}%`;
@@ -502,7 +498,7 @@ function handleAudioStream(stream, userId) {
         }
         requestAnimationFrame(updateVolume);
     }
-
+    
     updateVolume();
 }
 
@@ -517,11 +513,11 @@ function connectToNewUser(userId, username) {
         console.log('Уже идет процесс подключения, пропускаем...');
         return;
     }
-
+    
     console.log('Начинаем подключение к пользователю:', username, 'ID:', userId);
     console.log('Мой ID:', mySocketId);
     isConnecting = true;
-
+    
     try {
         const peer = new SimplePeer({
             initiator: true,
@@ -555,7 +551,7 @@ function connectToNewUser(userId, username) {
             console.log('Установлено peer-соединение с:', username);
             clearTimeout(connectionTimeout);
             isConnecting = false;
-
+            
             // Отправляем тестовые данные
             try {
                 peer.send('test-connection');
@@ -583,7 +579,7 @@ function connectToNewUser(userId, username) {
         peer._pc.onconnectionstatechange = () => {
             const state = peer._pc.connectionState;
             console.log('Состояние соединения изменилось:', state);
-
+            
             if (state === 'connected') {
                 console.log('Соединение успешно установлено');
                 clearTimeout(connectionTimeout);
@@ -602,7 +598,7 @@ function connectToNewUser(userId, username) {
         peer._pc.oniceconnectionstatechange = () => {
             const state = peer._pc.iceConnectionState;
             console.log('ICE состояние изменилось:', state);
-
+            
             if (state === 'checking') {
                 console.log('Проверка ICE кандидатов...');
             } else if (state === 'connected') {
@@ -647,7 +643,7 @@ socket.on('signal', async ({ userId, signal }) => {
     }
 
     console.log('Получен сигнал от пользователя:', userId, 'тип:', signal.type);
-
+    
     try {
         if (!peers[userId]) {
             console.log('Создаем нового пира для ответа пользователю:', userId);
@@ -740,10 +736,10 @@ function createAudioElement(userId, stream) {
     audio.autoplay = true;
     audio.playsInline = true;
     audio.srcObject = stream;
-
+    
     // Устанавливаем сохраненную громкость
     audio.volume = getUserVolume(userId) / 100;
-
+    
     audio.oncanplay = () => {
         console.log('Аудио готово к воспроизведению');
         const playPromise = audio.play();
@@ -758,7 +754,7 @@ function createAudioElement(userId, stream) {
                 });
         }
     };
-
+    
     return audio;
 }
 
@@ -773,7 +769,7 @@ socket.on('error', (message) => {
 function leaveRoom() {
     if (currentRoom) {
         socket.emit('leave-room', { room: currentRoom });
-
+        
         // Очищаем все peer-соединения
         Object.keys(peers).forEach(userId => {
             if (peers[userId]) {
@@ -781,31 +777,31 @@ function leaveRoom() {
                 delete peers[userId];
             }
         });
-
+        
         // Останавливаем все треки локального стрима
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
             localStream = null;
         }
-
+        
         // Останавливаем музыку
         stopAllMusic();
-
+        
         // Скрываем интерфейс комнаты
         const roomInterface = document.querySelector('.room');
         if (roomInterface) {
             roomInterface.style.display = 'none';
         }
-
+        
         // Показываем контейнер с выбором комнаты
         const container = document.querySelector('.container');
         if (container) {
             container.style.display = 'block';
         }
-
+        
         currentRoom = null;
         selectedRoom = null;
-
+        
         // Очищаем все аудио элементы
         document.querySelectorAll('audio').forEach(audio => {
             if (audio.id !== 'audio-self') {
@@ -818,12 +814,12 @@ function leaveRoom() {
 // Функция для переключения микрофона
 function toggleMute() {
     if (!localStream) return;
-
+    
     isMuted = !isMuted;
     localStream.getAudioTracks().forEach(track => {
         track.enabled = !isMuted;
     });
-
+    
     const muteBtn = document.querySelector('.mute-btn');
     if (muteBtn) {
         const icon = muteBtn.querySelector('i');
@@ -832,7 +828,7 @@ function toggleMute() {
         }
         muteBtn.classList.toggle('active', isMuted);
     }
-
+    
     // Оповещаем сервер о изменении состояния микрофона
     if (currentRoom) {
         socket.emit('user-mute-change', {
@@ -863,7 +859,7 @@ function toggleHearSelf() {
             }
         }
     }
-
+    
     // Обновляем иконку кнопки
     const hearSelfBtn = document.querySelector('.hear-self-btn');
     if (hearSelfBtn) {
@@ -880,136 +876,3 @@ function playSound(sound) {
     sound.currentTime = 0;
     sound.play().catch(error => console.error('Ошибка воспроизведения звука:', error));
 }
-
-// Функция для воспроизведения музыки
-function playMusic(trackId) {
-    // Если выбрана та же самая музыка, останавливаем её
-    if (currentMusic === musicTracks[trackId]) {
-        currentMusic.pause();
-        currentMusic.currentTime = 0;
-        currentMusic = null;
-        updateMusicButton(trackId, false);
-        // Оповещаем других пользователей об остановке музыки
-        if (currentRoom) {
-            socket.emit('music-control', {
-                room: currentRoom,
-                action: 'stop',
-                trackId: trackId
-            });
-        }
-        return;
-    }
-
-    // Останавливаем текущую музыку, если она играет
-    if (currentMusic) {
-        currentMusic.pause();
-        currentMusic.currentTime = 0;
-        // Обновляем кнопку предыдущего трека
-        Object.keys(musicTracks).forEach(id => {
-            if (musicTracks[id] === currentMusic) {
-                updateMusicButton(id, false);
-            }
-        });
-    }
-
-    // Воспроизводим новую музыку
-    currentMusic = musicTracks[trackId];
-    currentMusic.loop = false; // Отключаем повторение
-
-    // Добавляем обработчик окончания трека
-    currentMusic.onended = () => {
-        currentMusic = null;
-        updateMusicButton(trackId, false);
-        // Оповещаем других пользователей об окончании музыки
-        if (currentRoom) {
-            socket.emit('music-control', {
-                room: currentRoom,
-                action: 'stop',
-                trackId: trackId
-            });
-        }
-    };
-
-    currentMusic.play().catch(error => console.error('Ошибка воспроизведения музыки:', error));
-    updateMusicButton(trackId, true);
-
-    // Оповещаем других пользователей о воспроизведении музыки
-    if (currentRoom) {
-        socket.emit('music-control', {
-            room: currentRoom,
-            action: 'play',
-            trackId: trackId
-        });
-    }
-}
-
-// Функция для обновления состояния кнопки музыки
-function updateMusicButton(trackId, isPlaying) {
-    const button = document.querySelector(`.music-btn[data-track="${trackId}"]`);
-    if (button) {
-        const icon = button.querySelector('i');
-        if (icon) {
-            icon.className = isPlaying ? 'fas fa-stop' : 'fas fa-play';
-        }
-        button.classList.toggle('active', isPlaying);
-    }
-}
-
-// Функция для остановки всей музыки
-function stopAllMusic() {
-    if (currentMusic) {
-        currentMusic.pause();
-        currentMusic.currentTime = 0;
-        currentMusic = null;
-        // Обновляем все кнопки
-        Object.keys(musicTracks).forEach(trackId => {
-            updateMusicButton(trackId, false);
-        });
-        // Оповещаем других пользователей об остановке музыки
-        if (currentRoom) {
-            socket.emit('music-control', {
-                room: currentRoom,
-                action: 'stop',
-                trackId: Object.keys(musicTracks).find(id => musicTracks[id] === currentMusic)
-            });
-        }
-    }
-}
-
-// Добавляем обработчик управления музыкой от других пользователей
-socket.on('music-control', ({ action, trackId, userId }) => {
-    // Игнорируем собственные сигналы
-    if (userId === socket.id) return;
-
-    if (action === 'play') {
-        // Останавливаем текущую музыку, если она играет
-        if (currentMusic) {
-            currentMusic.pause();
-            currentMusic.currentTime = 0;
-            Object.keys(musicTracks).forEach(id => {
-                if (musicTracks[id] === currentMusic) {
-                    updateMusicButton(id, false);
-                }
-            });
-        }
-
-        // Воспроизводим новую музыку
-        currentMusic = musicTracks[trackId];
-        currentMusic.loop = false;
-
-        currentMusic.onended = () => {
-            currentMusic = null;
-            updateMusicButton(trackId, false);
-        };
-
-        currentMusic.play().catch(error => console.error('Ошибка воспроизведения музыки:', error));
-        updateMusicButton(trackId, true);
-    } else if (action === 'stop') {
-        if (currentMusic === musicTracks[trackId]) {
-            currentMusic.pause();
-            currentMusic.currentTime = 0;
-            currentMusic = null;
-            updateMusicButton(trackId, false);
-        }
-    }
-}); 
